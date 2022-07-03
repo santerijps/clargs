@@ -173,6 +173,7 @@
 
       // FLAG VALUE
       if (expecting_value == 1 && flag_index != -1) {
+        parser->flags[flag_index]->is_set = 1;
         switch (parser->flags[flag_index]->type) {
           case FLAG_TYPE_INT:
             parser->flags[flag_index]->value = clargs_flag_value_new_int(atoi(arg));
@@ -211,12 +212,12 @@
             if (flag->type != FLAG_TYPE_BOOL) {
               expecting_value = 1;
               flag_index = j;
-              parser->flags[j]->is_set = 1;
             }
             else {
               expecting_value = 0;
               flag_index = -1;
               parser->flags[j]->value = clargs_flag_value_new_bool(1);
+              parser->flags[j]->is_set = 1;
             }
             break;
           }
