@@ -51,14 +51,19 @@
   } CLARGS;
 
   FLAG_PARSER clargs_parser_new(int argc, char **argv);
+
   FLAG* clargs_flag_new(FLAG_PARSER *parser, FLAG_TYPE type, const char *long_name, const char short_name, const char *description);
   FLAG* clargs_flag_new_bool(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, short default_value);
   FLAG* clargs_flag_new_int(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, int default_value);
   FLAG* clargs_flag_new_str(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, const char *default_value);
+
   CLARGS clargs_parse_args(FLAG_PARSER *parser);
+
   FLAG_VALUE clargs_flag_value_new_bool(short value);
   FLAG_VALUE clargs_flag_value_new_int(int value);
   FLAG_VALUE clargs_flag_value_new_str(const char *value);
+
+  void clargs_print_usage(FLAG_PARSER *parser);
 
   FLAG_PARSER clargs_parser_new(int argc, char **argv) {
     FLAG_PARSER parser;
@@ -247,6 +252,29 @@
     }
 
     return result;
+  }
+
+  void clargs_print_usage(FLAG_PARSER *parser) {
+    // -short_name, --long_name <type>\t\tdescription
+    size_t i;
+    FLAG *f;
+    printf("Usage:\n");
+    for (i = 0; i < parser->flag_count; i++) {
+      f = parser->flags[i];
+      printf("  -%c, --%s\t\t", f->short_name, f->long_name);
+      switch (f->type) {
+        case FLAG_TYPE_BOOL:
+          printf("<boolean>");
+          break;
+        case FLAG_TYPE_INT:
+          printf("<integer>");
+          break;
+        case FLAG_TYPE_STR:
+          printf("<string>");
+          break;
+      }
+      printf("\t\t%s\n", f->description);
+    }
   }
 
 #endif

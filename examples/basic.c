@@ -27,5 +27,7 @@ int main (int argc, char **argv) {
     printf("Other arg: %s\n", other_args.values[i]);
   }
 
+  clargs_print_usage(&parser);
+
   return 0;
 }
