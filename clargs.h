@@ -255,7 +255,6 @@
   }
 
   void clargs_print_usage(FLAG_PARSER *parser) {
-    // -short_name, --long_name <type>\t\tdescription
     size_t i;
     FLAG *f;
     printf("Usage:\n");
