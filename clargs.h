@@ -45,12 +45,12 @@
   typedef struct FLAG_PARSER {
     int argc;
     char **argv;
-    size_t flag_count, flag_capacity;
+    int flag_count, flag_capacity;
     FLAG **flags;
   } FLAG_PARSER;
 
   typedef struct CLARGS {
-    size_t capacity, size;
+    int capacity, size;
     char **values;
   } CLARGS;
 
@@ -67,7 +67,12 @@
   FLAG_VALUE clargs_flag_value_new_int(int value);
   FLAG_VALUE clargs_flag_value_new_str(const char *value);
 
-  void clargs_print_flag_usage(FLAG_PARSER *parser, size_t indent);
+  int* __clargs_util_get_max_ln_d(FLAG_PARSER *p);
+  char* __clargs_util_flag_type_to_string(FLAG_TYPE t);
+  void __clargs_util_print_flag_usage(FLAG *f, int indent, char *hyphened_long_name, int max_len_ln, int max_len_d);
+
+  void clargs_print_flag_usage(FLAG_PARSER *p, FLAG *f, int indent);
+  void clargs_print_flag_usage_all(FLAG_PARSER *parser, int indent);
 
   FLAG_PARSER clargs_parser_new(int argc, char **argv) {
     FLAG_PARSER parser;
@@ -80,7 +85,6 @@
   }
 
   FLAG* clargs_flag_new(FLAG_PARSER *parser, FLAG_TYPE type, const char *long_name, const char short_name, const char *description) {
-
     FLAG *flag = (FLAG *) malloc(sizeof(FLAG));
 
     strcpy(flag->long_name, long_name);
@@ -157,11 +161,10 @@
   }
 
   CLARGS clargs_parse_args(FLAG_PARSER *parser) {
-
     CLARGS result;
     char *arg, short_name, *long_name;
     bool expecting_value;
-    size_t i, j, arg_length, flag_index;
+    int i, j, arg_length, flag_index;
     FLAG *flag;
 
     result.capacity = 5;
@@ -260,48 +263,93 @@
     return result;
   }
 
-  void clargs_print_flag_usage(FLAG_PARSER *parser, size_t indent) {
-
-    size_t i, len_ln, len_d;
-    size_t max_len_ln, max_len_d;
-    char *hyphened_ln;
-    size_t hyphened_len;
+  int* __clargs_util_get_max_ln_d(FLAG_PARSER *p) {
+    int i, len_ln, len_d, *r;
+    int max_len_ln, max_len_d;
     FLAG *f;
 
+    r = (int*) malloc(sizeof(int) * 2);
     max_len_ln = 0;
     max_len_d = 0;
 
-    for (i = 0; i < parser->flag_count; i++) {
-      f = parser->flags[i];
+    for (i = 0; i < p->flag_count; i++) {
+      f = p->flags[i];
       len_ln = strlen(f->long_name);
       len_d = strlen(f->description);
       if (len_ln > max_len_ln) max_len_ln = len_ln;
       if (len_d > max_len_d) max_len_d = len_d;
     }
 
+    r[0] = max_len_ln;
+    r[1] = max_len_d;
+
+    return r;
+  }
+
+  char* __clargs_util_flag_type_to_string(FLAG_TYPE t) {
+    switch (t) {
+      case FLAG_TYPE_BOOL:
+        return "boolean\0";
+      case FLAG_TYPE_INT:
+        return "integer\0";
+      case FLAG_TYPE_STR:
+        return "string\0";
+      default:
+        return "undefined\0";
+    }
+  }
+
+  void __clargs_util_print_flag_usage(FLAG *f, int indent, char *hyphened_long_name, int max_len_ln, int max_len_d) {
+    if (indent > 0) {
+      printf("%*c", indent, ' ');
+    }
+    printf("-%c, %-*s\t<%s>\t%-*s\n",
+      f->short_name, max_len_ln + 2, hyphened_long_name,
+      __clargs_util_flag_type_to_string(f->type),
+      max_len_d, f->description);
+  }
+
+  void clargs_print_flag_usage(FLAG_PARSER *p, FLAG *f, int indent) {
+    int *tmp, max_len_ln, max_len_d, hyphened_len;
+    char *hyphened_long_name;
+
+    tmp = __clargs_util_get_max_ln_d(p);
+    max_len_ln = tmp[0];
+    max_len_d = tmp[1];
+
+    hyphened_len = strlen(f->long_name) + 2;
+    hyphened_long_name = (char*) malloc(sizeof(char) * (hyphened_len));
+    memset(hyphened_long_name, 0, hyphened_len);
+
+    hyphened_long_name[0] = '-';
+    hyphened_long_name[1] = '-';
+    strcat(hyphened_long_name, f->long_name);
+
+    __clargs_util_print_flag_usage(f, indent, hyphened_long_name, max_len_ln, max_len_d);
+  }
+
+  void clargs_print_flag_usage_all(FLAG_PARSER *parser, int indent) {
+    int i, *tmp, max_len_ln, max_len_d, hyphened_len;
+    char *hyphened_long_name;
+    FLAG *f;
+
+    tmp = __clargs_util_get_max_ln_d(parser);
+    max_len_ln = tmp[0];
+    max_len_d = tmp[1];
+
     for (i = 0; i < parser->flag_count; i++) {
       f = parser->flags[i];
 
       hyphened_len = strlen(f->long_name) + 2;
-      hyphened_ln = (char*) malloc(sizeof(char) * (hyphened_len));
-      memset(hyphened_ln, 0, hyphened_len);
-      hyphened_ln[0] = '-';
-      hyphened_ln[1] = '-';
-      strcat(hyphened_ln, f->long_name);
+      hyphened_long_name = (char*) malloc(sizeof(char) * (hyphened_len));
+      memset(hyphened_long_name, 0, hyphened_len);
 
-      if (indent > 0) {
-        printf("%*c", indent, ' ');
-      }
+      hyphened_long_name[0] = '-';
+      hyphened_long_name[1] = '-';
+      strcat(hyphened_long_name, f->long_name);
 
-      printf("-%c, %-*s\t<%s>\t%-*s\n",
-        f->short_name, max_len_ln + 2, hyphened_ln,
-        f->type == FLAG_TYPE_BOOL ? "boolean" :
-        f->type == FLAG_TYPE_INT ? "integer" :
-        f->type == FLAG_TYPE_STR ? "string" : "",
-        max_len_d, f->description);
-
+      __clargs_util_print_flag_usage(f, indent, hyphened_long_name, max_len_ln, max_len_d);
     }
-
   }
 
 #endif

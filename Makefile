@@ -1,4 +1,4 @@
-CC=tcc
+CC=gcc
 FLAGS=-Wall -o bin/clargs.exe
 
 basic: bin
