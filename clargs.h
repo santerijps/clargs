@@ -63,7 +63,7 @@
   FLAG_VALUE clargs_flag_value_new_int(int value);
   FLAG_VALUE clargs_flag_value_new_str(const char *value);
 
-  void clargs_print_usage(FLAG_PARSER *parser);
+  void clargs_print_flag_usage(FLAG_PARSER *parser, size_t indent);
 
   FLAG_PARSER clargs_parser_new(int argc, char **argv) {
     FLAG_PARSER parser;
@@ -255,26 +255,48 @@
     return result;
   }
 
-  void clargs_print_usage(FLAG_PARSER *parser) {
-    size_t i;
+  void clargs_print_flag_usage(FLAG_PARSER *parser, size_t indent) {
+
+    size_t i, len_ln, len_d;
+    size_t max_len_ln, max_len_d;
+    char *hyphened_ln;
+    size_t hyphened_len;
     FLAG *f;
-    printf("Usage:\n");
+
+    max_len_ln = 0;
+    max_len_d = 0;
+
     for (i = 0; i < parser->flag_count; i++) {
       f = parser->flags[i];
-      printf("  -%c, --%s\t\t", f->short_name, f->long_name);
-      switch (f->type) {
-        case FLAG_TYPE_BOOL:
-          printf("<boolean>");
-          break;
-        case FLAG_TYPE_INT:
-          printf("<integer>");
-          break;
-        case FLAG_TYPE_STR:
-          printf("<string>");
-          break;
-      }
-      printf("\t\t%s\n", f->description);
+      len_ln = strlen(f->long_name);
+      len_d = strlen(f->description);
+      if (len_ln > max_len_ln) max_len_ln = len_ln;
+      if (len_d > max_len_d) max_len_d = len_d;
     }
+
+    for (i = 0; i < parser->flag_count; i++) {
+      f = parser->flags[i];
+
+      hyphened_len = strlen(f->long_name) + 2;
+      hyphened_ln = (char*) malloc(sizeof(char) * (hyphened_len));
+      memset(hyphened_ln, 0, hyphened_len);
+      hyphened_ln[0] = '-';
+      hyphened_ln[1] = '-';
+      strcat(hyphened_ln, f->long_name);
+
+      if (indent > 0) {
+        printf("%*c", indent, ' ');
+      }
+
+      printf("-%c, %-*s\t<%s>\t%-*s\n",
+        f->short_name, max_len_ln + 2, hyphened_ln,
+        f->type == FLAG_TYPE_BOOL ? "boolean" :
+        f->type == FLAG_TYPE_INT ? "integer" :
+        f->type == FLAG_TYPE_STR ? "string" : "",
+        max_len_d, f->description);
+
+    }
+
   }
 
 #endif
