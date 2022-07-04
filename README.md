@@ -2,7 +2,7 @@
 
 `clargs` is a command line argument parsing library for the C programming language. This library was inspired by the [Go flag](https://pkg.go.dev/flag) package. The flags currently support:
 
-- Booleans (`short`)
+- Booleans (`bool`)
 - Integers (`int`)
 - Strings (`char*`)
 
