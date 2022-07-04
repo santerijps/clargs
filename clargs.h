@@ -10,6 +10,10 @@
     #include <stdlib.h>
   #endif
 
+  #ifndef __bool_true_false_are_defined
+    #include <stdbool.h>
+  #endif
+
   #ifndef _INC_STRING
     #include <string.h>
   #endif
@@ -24,7 +28,7 @@
   } FLAG_TYPE;
 
   typedef union FLAG_VALUE {
-    short _bool;
+    bool _bool;
     int _int;
     char* _str;
   } FLAG_VALUE;
@@ -35,7 +39,7 @@
     FLAG_VALUE value;
     FLAG_VALUE default_value;
     char description[CLARGS_FLAG_DESCRIPTION_MAX_LENGTH];
-    short is_set;
+    bool is_set;
   } FLAG;
 
   typedef struct FLAG_PARSER {
@@ -53,13 +57,13 @@
   FLAG_PARSER clargs_parser_new(int argc, char **argv);
 
   FLAG* clargs_flag_new(FLAG_PARSER *parser, FLAG_TYPE type, const char *long_name, const char short_name, const char *description);
-  FLAG* clargs_flag_new_bool(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, short default_value);
+  FLAG* clargs_flag_new_bool(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, bool default_value);
   FLAG* clargs_flag_new_int(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, int default_value);
   FLAG* clargs_flag_new_str(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, const char *default_value);
 
   CLARGS clargs_parse_args(FLAG_PARSER *parser);
 
-  FLAG_VALUE clargs_flag_value_new_bool(short value);
+  FLAG_VALUE clargs_flag_value_new_bool(bool value);
   FLAG_VALUE clargs_flag_value_new_int(int value);
   FLAG_VALUE clargs_flag_value_new_str(const char *value);
 
@@ -88,7 +92,7 @@
 
     switch (flag->type) {
       case FLAG_TYPE_BOOL:
-        flag->value = clargs_flag_value_new_bool(0);
+        flag->value = clargs_flag_value_new_bool(false);
         break;
       case FLAG_TYPE_INT:
         flag->value = clargs_flag_value_new_int(0);
@@ -110,7 +114,7 @@
     return flag;
   }
 
-  FLAG* clargs_flag_new_bool(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, short default_value) {
+  FLAG* clargs_flag_new_bool(FLAG_PARSER *parser, const char *long_name, const char short_name, const char *description, bool default_value) {
     FLAG *flag = clargs_flag_new(parser, FLAG_TYPE_BOOL, long_name, short_name, description);
     flag->default_value = clargs_flag_value_new_bool(default_value);
     return flag;
@@ -128,7 +132,7 @@
     return flag;
   }
 
-  FLAG_VALUE clargs_flag_value_new_bool(short value) {
+  FLAG_VALUE clargs_flag_value_new_bool(bool value) {
     FLAG_VALUE flag_value;
     flag_value._bool = value;
     return flag_value;
@@ -155,7 +159,8 @@
   CLARGS clargs_parse_args(FLAG_PARSER *parser) {
 
     CLARGS result;
-    char *arg, short_name, *long_name, expecting_value;
+    char *arg, short_name, *long_name;
+    bool expecting_value;
     size_t i, j, arg_length, flag_index;
     FLAG *flag;
 
@@ -163,7 +168,7 @@
     result.size = 0;
     result.values = (char**) malloc(sizeof(char*) * result.capacity);
 
-    expecting_value = 0;
+    expecting_value = false;
     flag_index = -1;
 
     for (i = 1; i < parser->argc; i++) {
@@ -172,7 +177,7 @@
       arg_length = strlen(arg);
 
       // FLAG VALUE
-      if (expecting_value == 1 && flag_index != -1) {
+      if (expecting_value == true && flag_index != -1) {
         parser->flags[flag_index]->is_set = 1;
         switch (parser->flags[flag_index]->type) {
           case FLAG_TYPE_INT:
@@ -185,7 +190,7 @@
             printf("Invalid FLAG_TYPE\n");
             exit(1);
         }
-        expecting_value = 0;
+        expecting_value = false;
       }
 
       // FLAG NAME
@@ -210,14 +215,14 @@
           flag = parser->flags[j];
           if ((long_name != NULL && strcmp(flag->long_name, long_name) == 0) || (short_name != '\0' && flag->short_name == short_name) ) {
             if (flag->type != FLAG_TYPE_BOOL) {
-              expecting_value = 1;
+              expecting_value = true;
               flag_index = j;
             }
             else {
-              expecting_value = 0;
+              expecting_value = false;
               flag_index = -1;
-              parser->flags[j]->value = clargs_flag_value_new_bool(1);
-              parser->flags[j]->is_set = 1;
+              parser->flags[j]->value = clargs_flag_value_new_bool(true);
+              parser->flags[j]->is_set = true;
             }
             break;
           }
