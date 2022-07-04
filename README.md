@@ -22,5 +22,5 @@ FLAG* clargs_flag_new_str(FLAG_PARSER *parser, const char *long_name, const char
 CLARGS clargs_parse_args(FLAG_PARSER *parser);
 
 // Print the usage of the flags
-void clargs_print_usage(FLAG_PARSER *parser);
+void clargs_print_flag_usage(FLAG_PARSER *parser, size_t indent);
 ```
