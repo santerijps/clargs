@@ -285,7 +285,7 @@ ParseArgs(struct FlagParser *fp, int argc, char **argv)
       {
         /////
         // Short name or long name matches a flag
-        if (fp->flags[j]->name_short == short_name || (long_name != NULL && strcmp(fp->flags[j]->name_long, long_name) == 0))
+        if ((fp->flags[j]->name_short == short_name && short_name != '\0') || (long_name != NULL && strcmp(fp->flags[j]->name_long, long_name) == 0))
         {
           /////
           // In the case of boolean flags, no value is read.
